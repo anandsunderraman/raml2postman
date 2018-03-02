@@ -76,8 +76,15 @@ var converter = {
         //lodash 4+ does not support this
         //check https://github.com/lodash/lodash/wiki/Changelog#v400
         _.forOwn(res.uriParameters, _.bind(function(val, urlParam) {
-            res.relativeUri = res.relativeUri.replace('{' + urlParam + '}', ":" + urlParam);
-            this.addEnvKey(urlParam, val.type, val.displayName);
+
+            //if example for uri parameter is provided use that rather than param name
+            if (!_.isUndefined(val.example)) {
+                res.relativeUri = res.relativeUri.replace('{' + urlParam + '}', val.example);
+                this.addEnvKey(urlParam, val.type, val.displayName, val.example);
+            } else {
+                res.relativeUri = res.relativeUri.replace('{' + urlParam + '}', ":" + urlParam);
+                this.addEnvKey(urlParam, val.type, val.displayName);
+            }
 
             val.description = val.description || "";
             paramDescription += urlParam + ": " + val.description + '\n\n';
@@ -311,12 +318,12 @@ var converter = {
         }, {});
     },
 
-    addEnvKey: function(key, type, displayName) {
+    addEnvKey: function(key, type, displayName, value) {
         if (!_.has(this.env, key)) {
             var envObj = {};
             envObj.name = displayName || key;
             envObj.enabled = true;
-            envObj.value = "";
+            envObj.value = _.isUndefined(value) ? "" : value;
             envObj.type = type || "string";
             envObj.key = key;
 
@@ -359,9 +366,18 @@ var converter = {
         // BaseURI Conversion
         _.forOwn(this.data.baseUriParameters, _.bind(function(val, param) {
             // Version will be specified in the baseUriParameters
-            this.data.baseUri = this.data.baseUri.replace("{" + param + "}", ":" + param);
+            //surround version with {{}} so it can be used as environment variable
+            this.data.baseUri = this.data.baseUri.replace("{" + param + "}", "{{" + param + "}}");
 
-            this.addEnvKey(param, val.type, val.displayName);
+            //val.enum[0]
+            //if version value is present then pass it to environment
+            //version is stored in an enum array in val object
+            if (!_.isUndefined(val.enum) && _.isArray(val.enum) && val.enum.length > 0) {
+                this.addEnvKey(param, val.type, val.displayName, val.enum[0]);
+            } else {
+                this.addEnvKey(param, val.type, val.displayName);
+            }
+
         }, this));
 
         // Convert schemas to objects.
