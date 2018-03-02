@@ -156,7 +156,14 @@ var converter = {
                 } else {
                     request.url += '&';
                 }
-                request.url += param + '=';
+
+                //if example is provider for query parameter
+                //then use that for generating the url
+                if ( !_.isUndefined(val.example) ) {
+                    request.url += param + '=' + val.example;
+                } else {
+                    request.url += param + '=';
+                }
                 queryFlag = queryFlag || true;
             });
 
