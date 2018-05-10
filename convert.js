@@ -261,6 +261,46 @@ var converter = {
         }
     },
 
+    /**
+     * Returns a string representation of a javascript function
+     * that validates then response with the schema object
+     * @param schema
+     */
+    generateTest: function(schema) {
+
+        var dereferencedSchemaString = JSON.stringify(this.dereferenceSchema(schema));
+
+        var test = 'var expectedSchema = JSON.parse(' + dereferencedSchemaString + '); \n'
+        test += 'pm.test("Verify response schema", function () { \n';
+        test += 'var responseData = pm.response.json(); \n';
+        test += 'pm.expect(tv4.validate(responseData, expectedSchema)).to.be.true; \n';
+        test += '})';
+        return test;
+    },
+
+    /**
+     * Dereference the schema to return effective schema
+     * @param schema
+     */
+    dereferenceSchema: function (schema) {
+
+        var derefOptions = {
+            "resolve": {
+                "file": {
+                    "canRead": function isFile (file) {
+                        if (file.extension === '' || file.extension === undefined || file.extension === null) {
+                            file.url = file.url + ".schema";
+                        }
+                        return fs.existsSync(file.url);
+                    }
+                }
+            }
+        };
+
+        return $RefParser.dereference(schema, derefOptions);
+
+    },
+
     schemaToJSON: function(schema) {
         var obj;
         var oldThis = this;
