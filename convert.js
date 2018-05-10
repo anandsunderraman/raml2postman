@@ -212,6 +212,14 @@ var converter = {
             }, this));
 
             request.headers = headerString;
+
+            //request.test = should contain a test to validate that
+            //the response for 200 conforms with the schema defined
+            //responses["200"]["body"]["application/json"]["schema"] returns the schema
+            //dereference the schema to get the actual schema
+            //add the dereferenced schema to environment
+            //verify that response conforms to the dereferenced schema using tv4
+
             this.sampleFile.requests.push(request);
             this.currentFolder.order.push(request.id);
         }, this));
